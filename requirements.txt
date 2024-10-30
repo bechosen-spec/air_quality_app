@@ -1,0 +1,25 @@
+# Streamlit for web app interface
+streamlit>=1.18.0,<2.0
+
+# Data processing
+pandas>=1.3.0,<2.0
+numpy>=1.20.0,<2.1.0
+pyyaml==6.0.2  # For loading YAML configuration files
+
+# Model handling and machine learning
+scikit-learn>=1.0.0,<1.6.0
+xgboost>=1.5.0,<2.0.0
+tensorflow>=2.6.0,<2.10.0
+
+# Email notifications (using smtplib in the code, but alternatively, you can use Twilio SendGrid)
+secure-smtplib==0.1.1  # Optional: if using Twilio or other email services, remove this as it's built-in
+
+# Twilio (if you plan to send SMS notifications)
+twilio==7.6.0
+
+# General utilities
+pickle-mixin==1.0.2  # Optional, depending on your environment for saving/loading models
+python-dotenv==1.0.1
+requests==2.32.3
+
+

@@ -1,0 +1,7 @@
+AQI_levels:
+  Good: "0-50"                     # Air quality is considered satisfactory, and air pollution poses little or no risk
+  Moderate: "51-100"               # Air quality is acceptable; however, some pollutants may be a concern for a small number of people
+  Unhealthy for Sensitive Groups: "101-150"  # Health effects may be more severe for sensitive individuals
+  Unhealthy: "151-200"             # Everyone may begin to experience health effects; sensitive groups may experience more severe effects
+  Very Unhealthy: "201-300"        # Health alert: everyone may experience more serious health effects
+  Hazardous: "301-500"             # Health warning of emergency conditions: the entire population is more likely to be affected
