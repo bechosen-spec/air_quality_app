@@ -30,32 +30,43 @@ def logout_user():
     st.session_state.user = None
     go_to_page("home")
 
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+if st.session_state.logged_in:
+    st.sidebar.button("Dashboard", on_click=lambda: go_to_page("dashboard"))
+    st.sidebar.button("Logout", on_click=logout_user)
+else:
+    st.sidebar.button("Home", on_click=lambda: go_to_page("home"))
+    st.sidebar.button("Sign Up", on_click=lambda: go_to_page("signup"))
+
 # Home Page (Login Form and Platform Details)
 if st.session_state.page == "home":
-    st.title("Welcome to Air Quality Monitoring")
-    st.write("Monitor real-time air quality levels and receive personalized warnings based on your location and health conditions.")
-
-    st.header("Log In")
-    username_or_email = st.text_input("Username or Email", key="login_username_or_email")
-    password = st.text_input("Password", type="password", key="login_password")
-
+    st.title("🌎 Welcome to Air Quality Monitoring")
+    st.write("Keep track of air quality levels and receive personalized alerts based on your health and location.")
+    
+    st.subheader("Log In")
+    username_or_email = st.text_input("Username or Email", key="login_username_or_email", placeholder="Enter your username or email")
+    password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+    
+    # Login and Create Account Buttons
     if st.button("Log In"):
         user = authenticate_user(username_or_email, password)
         if user:
             login_user(user)
         else:
-            st.error("Login failed. Please check your username/email and password.")
+            st.error("Invalid login details. Please try again.")
 
-    # Link to Sign-Up Page
+    st.write("---")  # Divider for better visual separation
+
     if st.button("Create an Account"):
         go_to_page("signup")
 
 # Sign-Up Page
 elif st.session_state.page == "signup":
-    st.title("Create an Account")
+    st.title("🌱 Create an Account")
+    st.write("Join us to start monitoring air quality tailored to your needs.")
     user_data = sign_up_user()  # Sign-up function that returns the new user's data if created, or None if existing
 
-    # Check if user data exists
     if user_data == "exists":
         st.warning("User already exists. Please log in.")
         go_to_page("home")
@@ -67,26 +78,22 @@ elif st.session_state.page == "signup":
 # Dashboard Page
 elif st.session_state.page == "dashboard" and st.session_state.logged_in:
     user = st.session_state.user
-    st.title(f"Welcome, {user['name']}!")
-    
+    st.title(f"👋 Welcome, {user['name']}!")
+    st.write("Monitor air quality updates and receive warnings tailored for you.")
+
     # Location selection and AQI display
-    location = st.selectbox("Select Location", options=["Lagos", "Ilorin"], key="location_select")
-    aqi_today = get_prediction(location)
+    st.selectbox("Select Your Location", options=["Lagos", "Ilorin"], key="location_select")
+    aqi_today = get_prediction(st.session_state.location_select)
     category = categorize_aqi(aqi_today, thresholds)
 
-    st.subheader(f"Tomorrow's Air Quality in {location}")
+    st.subheader(f"🌤 Air Quality Forecast for {st.session_state.location_select}")
     st.metric(label="AQI Level", value=aqi_today)
-    st.write(f"Category: {category}")
-
+    st.write(f"**Category:** {category}")
+    
     # Display personalized warning
-    if user["condition"] == "Respiratory Issue" or user["age"] > 60:
-        personalized_message = f"Warning for {user['name']}: Air quality is {category}. Take necessary precautions."
+    if user.get("condition") == "Respiratory Issue" or user.get("age", 0) > 60:
+        personalized_message = f"⚠️ Warning for {user['name']}: Air quality is categorized as {category}. Please take necessary precautions."
         st.warning(personalized_message)
-        
-        # Define subject and content, and call `send_email` with Mailgun
-        email_subject = "Air Quality Warning"
-        send_email(user["email"], email_subject, personalized_message)
 
-    # Logout Button
-    if st.button("Logout"):
-        logout_user()
+        # Send email notification
+        send_email(user["email"], "Air Quality Warning", personalized_message)
