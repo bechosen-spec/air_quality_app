@@ -58,6 +58,7 @@ def logout_user():
     st.session_state.user = None
     go_to_page("home")
 
+# Function to send notifications when the user logs in
 def send_login_notifications(user):
     location = user["location"]
     aqi_today = get_prediction(location)
@@ -68,31 +69,42 @@ def send_login_notifications(user):
     send_whatsapp(user["phone"], message)
     st.info(f"Notification sent to {user['name']} via email and WhatsApp.")
 
-# Home Page
-if st.session_state.page == "home":
-    st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Air Quality Monitoring</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Monitor air quality levels and receive timely notifications to stay safe and healthy.</p>", unsafe_allow_html=True)
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+if st.session_state.logged_in:
+    st.sidebar.button("Dashboard", on_click=lambda: go_to_page("dashboard"))
+    st.sidebar.button("Logout", on_click=logout_user)
+else:
+    st.sidebar.button("Home", on_click=lambda: go_to_page("home"))
+    st.sidebar.button("Sign Up", on_click=lambda: go_to_page("signup"))
 
+# Home Page (Login Form and Platform Details)
+if st.session_state.page == "home":
+    st.title("🌎 Welcome to Air Quality Monitoring")
+    st.write("Keep track of air quality levels and receive personalized alerts based on your health and location.")
+    
     st.subheader("Log In")
     username_or_email = st.text_input("Username or Email", key="login_username_or_email", placeholder="Enter your username or email")
     password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+    
+    # Login and Create Account Buttons
+    if st.button("Log In"):
+        user = authenticate_user(username_or_email, password)
+        if user:
+            login_user(user)
+        else:
+            st.error("Invalid login details. Please try again.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Log In", use_container_width=True):
-            user = authenticate_user(username_or_email, password)
-            if user:
-                login_user(user)
-            else:
-                st.error("Login failed. Please check your credentials.")
-    with col2:
-        if st.button("Create an Account", use_container_width=True):
-            go_to_page("signup")
+    st.write("---")  # Divider for better visual separation
+
+    if st.button("Create an Account"):
+        go_to_page("signup")
 
 # Sign-Up Page
 elif st.session_state.page == "signup":
-    st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Create an Account</h1>", unsafe_allow_html=True)
-    user_data = sign_up_user()
+    st.title("🌱 Create an Account")
+    st.write("Join us to start monitoring air quality tailored to your needs.")
+    user_data = sign_up_user()  # Sign-up function that returns the new user's data if created, or None if existing
 
     if user_data == "exists":
         st.warning("User already exists. Please log in.")
@@ -105,19 +117,22 @@ elif st.session_state.page == "signup":
 # Dashboard Page
 elif st.session_state.page == "dashboard" and st.session_state.logged_in:
     user = st.session_state.user
-    st.markdown(f"<h1 style='text-align: center;'>Welcome, {user['name']}!</h1>", unsafe_allow_html=True)
+    st.title(f"👋 Welcome, {user['name']}!")
+    st.write("Monitor air quality updates and receive warnings tailored for you.")
 
-    location = st.selectbox("Select Your Location", ["Lagos", "Ilorin"], key="location_select")
-    aqi_today = get_prediction(location)
+    # Location selection and AQI display
+    st.selectbox("Select Your Location", options=["Lagos", "Ilorin"], key="location_select")
+    aqi_today = get_prediction(st.session_state.location_select)
     category = categorize_aqi(aqi_today, thresholds)
 
-    st.subheader(f"Air Quality in {location}")
-    st.metric(label="AQI Level", value=aqi_today, delta=None)
-    st.markdown(f"<p style='font-size: 16px;'>The air quality is categorized as <b>{category}</b>. Stay cautious!</p>", unsafe_allow_html=True)
-
-    if user["condition"] == "Respiratory Issue" or user["age"] > 60:
-        personalized_message = f"Dear {user['name']}, the air quality in {location} is '{category}' (AQI: {aqi_today}). Take necessary precautions!"
+    st.subheader(f"🌤 Air Quality Forecast for {st.session_state.location_select}")
+    st.metric(label="AQI Level", value=aqi_today)
+    st.write(f"**Category:** {category}")
+    
+    # Display personalized warning
+    if user.get("condition") == "Respiratory Issue" or user.get("age", 0) > 60:
+        personalized_message = f"⚠️ Warning for {user['name']}: Air quality is categorized as {category}. Please take necessary precautions."
         st.warning(personalized_message)
 
-    if st.button("Logout", use_container_width=True):
-        logout_user()
+        # Send email notification
+        send_email(user["email"], "Air Quality Warning", personalized_message)
