@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from modules.model_predictor import get_prediction
+import matplotlib.pyplot as plt
+from modules.model_predictor import get_prediction, get_weekly_prediction
 from modules.thresholds import load_thresholds, categorize_aqi
 from modules.notifications import send_email, send_whatsapp
 from modules.user_management import sign_up_user, authenticate_user, user_exists
@@ -130,6 +131,23 @@ elif st.session_state.page == "dashboard" and st.session_state.logged_in:
     if user["condition"] == "Respiratory Issue" or user["age"] > 60:
         personalized_message = f"Dear {user['name']}, the air quality in {location} is '{category}' (AQI: {aqi_today}). Take necessary precautions!"
         st.warning(personalized_message)
+
+    # Weekly Forecast Section
+    st.subheader("Air Quality Forecast for the Next 7 Days")
+    weekly_predictions = get_weekly_prediction(location)
+    
+    # Prepare the graph
+    dates = weekly_predictions["dates"]
+    predictions = weekly_predictions["predictions"]
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(dates, predictions, marker='o', color='b', linestyle='-', linewidth=2, markersize=8)
+    ax.set_xlabel('Date')
+    ax.set_ylabel('AQI')
+    ax.set_title(f'Air Quality Forecast for {location} (Next 7 Days)')
+    ax.grid(True)
+    
+    st.pyplot(fig)
 
     if st.button("Logout", use_container_width=True):
         logout_user()
