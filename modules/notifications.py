@@ -1,67 +1,42 @@
-import requests
-import os
-from dotenv import load_dotenv
+from vonage import Auth, Vonage
+from vonage_sms import SmsMessage, SmsResponse
 
-# Load environment variables
-load_dotenv()
+def send_sms(to, message):
+    """
+    Sends an SMS message to the specified phone number.
 
-# Function to send email notifications using Mailgun
-def send_email(to_email, subject, message_content):
-    MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
-    MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN", "sandboxb1b17b26ad8e49c293594054bbf495ac.mailgun.org")
+    Args:
+        to (str): Recipient's phone number in international format.
+        message (str): Message to send.
+
+    Returns:
+        None
+    """
+    # Initialize the Vonage client with API credentials
+    auth = Auth(api_key="3f376703", api_secret="wPRPFLn0tj1uSWsH")
+    client = Vonage(auth)
     
-    if not MAILGUN_API_KEY:
-        print("Mailgun API key is missing. Please set it in the environment variables.")
-        return
+    try:
+        # Create the SMS message
+        sms_message = SmsMessage(
+            to=to,
+            from_="Air Quality App",
+            text=message,
+        )
 
-    # Mailgun API URL
-    mailgun_url = f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages"
+        # Send the SMS
+        response: SmsResponse = client.sms.send(sms_message)
 
-    # Send the email
-    response = requests.post(
-        mailgun_url,
-        auth=("api", MAILGUN_API_KEY),
-        data={
-            "from": f"Air Quality Monitoring <mailgun@{MAILGUN_DOMAIN}>",
-            "to": to_email,
-            "subject": subject,
-            "text": message_content
-        }
-    )
+        # Handle the response
+        if response["messages"][0]["status"] == "0":
+            print("Message sent successfully.")
+        else:
+            print(f"Message failed with error: {response['messages'][0]['error-text']}")
+    except Exception as e:
+        print(f"Error sending SMS: {e}")
 
-    # Log the response
-    if response.status_code == 200:
-        print(f"Email sent successfully to {to_email}.")
-    else:
-        print(f"Failed to send email. Status Code: {response.status_code}")
-        print("Response JSON:", response.json())
-
-    return response
-
-# Function to send WhatsApp notifications using CallMeBot
-def send_whatsapp(phone_number, message):
-    CALLMEBOT_API_KEY = os.getenv("CALLMEBOT_API_KEY")
-    
-    if not CALLMEBOT_API_KEY:
-        print("CallMeBot API key is missing. Please set it in the environment variables.")
-        return
-
-    # CallMeBot API URL
-    url = f"https://api.callmebot.com/whatsapp.php"
-    params = {
-        "phone": phone_number,
-        "text": message,
-        "apikey": CALLMEBOT_API_KEY
-    }
-
-    # Send the WhatsApp message
-    response = requests.get(url, params=params)
-
-    # Log the response
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}.")
-    else:
-        print(f"Failed to send WhatsApp message. Status Code: {response.status_code}")
-        print("Response Text:", response.text)
-
-    return response
+# Example usage
+if __name__ == "__main__":
+    recipient_number = "+2348105994390"  # Replace with actual recipient number
+    text_message = "Hello! This is a test message from the Air Quality App."
+    send_sms(recipient_number, text_message)
